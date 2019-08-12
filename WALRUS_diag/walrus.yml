@@ -1,0 +1,28 @@
+# walrus.yml
+
+# TODO
+# ERA-I has daily data, and walrus needs hourly data!
+datasets:
+ - {dataset: ERA-Interim, project: OBS,   tier: 3,    type: reanaly,    version: 1,        start_year: 2011,  end_year: 2013}
+# - {dataset: ERA5, project: CMIP6,    tier: 3,    type: reanaly,    version: 1,        start_year: 2000,  end_year: 2002}
+
+
+diagnostics:
+  diagnostic1:
+    description: Extracting data for WALRUS.
+    variables:
+      pr:
+        mip: day
+      evspsblpot:
+        mip: day
+      tas:
+        mip: day
+      rsds:
+        mip: day
+    scripts:
+      script1:
+        script: WLARUS/WALRUS_input.py
+        datfile: 'PEQ_Hupsel.dat' # Q_obs is here
+        geojfile: 'walrus-hupsel.geojson'
+        weighting_method: 'mean_inside'
+        write_dat: true
