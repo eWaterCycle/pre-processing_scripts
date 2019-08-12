@@ -1,31 +1,9 @@
-#!/usr/bin/env python
-"""Diagnostic script to run WALRUS.
-
-Description
------------
-Unit conversion and area averaging of forcing data for WALRUS.
-
-Author
-------
-Team-Beta
-
-Project
--------
-eWaterCycle
-
-Parameters
------------
-cfg: dict
-        Dictionary with diagnostic configuration.
-"""
-
 """Diagnostic for WALRUS based on diag_shapeselect.py."""
 import logging
 import os
 from copy import deepcopy
 
 import fiona
-import json
 import pandas as pd
 import iris
 import numpy as np
@@ -37,6 +15,7 @@ from esmvaltool.diag_scripts.shared import (run_diagnostic, ProvenanceLogger,
                                             get_diagnostic_filename)
 
 logger = logging.getLogger(os.path.basename(__file__))
+
 
 def get_provenance_record(cfg, basename, caption, extension):
     """Create a provenance record describing the diagnostic data and plot."""
@@ -57,13 +36,6 @@ def shapeselect(cfg, cube):
     gjpath = cfg['geojfile']
     if not os.path.isabs(gjpath):
         gjpath = os.path.join(cfg['auxiliary_data_dir'], gjpath)
-    shppath = os.path.join(
-                cfg['work_dir'],
-                os.path.splitext(os.path.basename(filename))[0] + 'walrus-hupsel'
-                + '.shp')
-    schema = {'geometry': 'Polygon','properties': {'fld_a': 'str:50'}}
-    with fiona.open(shppath, 'w', 'ESRI Shapefile', schema) as layer:
-        layer.write({'geometry': json.loads(gjpath), 'properties': {'fld_a': 'test'}}) 
     wgtmet = cfg['weighting_method']
     if ((cube.coord('latitude').ndim == 1
          and cube.coord('longitude').ndim == 1)):
@@ -75,7 +47,7 @@ def shapeselect(cfg, cube):
     else:
         raise ValueError("Support for 2-d coords not implemented!")
     points = MultiPoint(coordpoints)
-    with fiona.open(shppath) as shp:
+    with fiona.open(gjpath) as shp:
         gpx = []
         gpy = []
         cnt = -1
@@ -159,18 +131,18 @@ def getdata(filename, ncts):
     """get the content of a netcdffile inside the lumped area."""
     ncfile = Dataset(filename, 'r')
     dtime = num2date(ncfile.variables['time'][:],
-                    ncfile.variables['time'].units,
-                    ncfile.variables['time'].calendar)
+                     ncfile.variables['time'].units,
+                     ncfile.variables['time'].calendar)
     wtime = []
     for dtim in dtime:
         wtime.append(str(dtim))
     wdata = []
     for row in range(ncts.shape[1]):
-        wdata.append(np.around(np.squeeze(ncts[:, row]), decimals=8))                               
+        wdata.append(np.around(np.squeeze(ncts[:, row]), decimals=8))
     return wtime, wdata
 
 
-def writdat(cfg, filename, input_dt):
+def writdat(cfg, input_dt):
     """Write the content of a dataframe as .dat."""
     input_dt['Q'] = [None]*input_dt.shape[0]
     dtpath = cfg['datfile']
@@ -180,16 +152,13 @@ def writdat(cfg, filename, input_dt):
         dummy_df = pd.read_csv(dtpath, sep=' ')
         if 'Q' in dummy_df.columns:
             input_dt['Q'] = dummy_df['Q']
-    input_dt.rename(columns = {'pr': 'P',
-                                'evspsblpot': 'ETpot', 
-                                'tas': 'T', 
-                                'rsds': 'GloRad'}, 
-                    inplace = True)
-    dtpath = os.path.join(
-                cfg['work_dir'],
-                os.path.splitext(os.path.basename(filename))[0] + '_polygon_table'
-                + '.dat')
-    input_dt.to_csv(dtpath, index = True, header=True, sep=' ')
+    input_dt.rename(columns={
+                'pr': 'P',
+                'evspsblpot': 'ETpot',
+                'tas': 'T',
+                'rsds': 'GloRad'}, inplace=True)
+    dtpath = os.path.join(cfg['work_dir'], '_polygon_table', '.dat')
+    input_dt.to_csv(dtpath, index=True, header=True, sep=' ')
 
 
 def main(cfg):
@@ -208,7 +177,7 @@ def main(cfg):
         input_dt[str(attributes['standard_name'])] = wdata
     name = cfg['model']
     if cfg['write_dat']:
-        writdat(cfg, filename, input_dt)
+        writdat(cfg, input_dt)
         caption = 'Average value within lumped area.'
         get_provenance_record(cfg, name, caption, 'dat')
 
