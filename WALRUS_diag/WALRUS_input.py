@@ -154,7 +154,7 @@ def best_match(iin, jin, pex, pey):
     return ind[0], ind[1]
 
 def getdata(filename, ncts):
-    """Write the content of a netcdffile as .dat."""
+    """get the content of a netcdffile inside the lumped."""
     ncfile = Dataset(filename, 'r')
     dtime = num2date(ncfile.variables['time'][:],
                     ncfile.variables['time'].units,
@@ -167,35 +167,32 @@ def getdata(filename, ncts):
         wdata.append(np.around(np.squeeze(ncts[:, row]), decimals=8))                               
     return wtime, wdata
 
-def writdat(cfg, filename, input_dict):
+def writdat(cfg, filename, input_dt):
     """Write the content of a dataframe as .dat."""
+    input_dt['Q'] = [None]*input_dt.shape[0]
     dtpath = cfg['datfile']
-    # TODO check for this if
-    if not os.path.isfile(dtpath):
-        dtpath = os.path.join(
-                cfg['work_dir'],
-                os.path.splitext(os.path.basename(filename))[0] + '_polygon_table'
-                + '.dat')
-    dummy_df = pd.read_csv(dtpath, sep='\t')
-    dummy_df = pd.DataFrame(dummy_df)
-    # TODO check for NA values
-    if 'Q' not in dummy_df.columns:
-        dummy_df['Q'] =  [None]*input_dict.shape[0]
-    input_dict['Q'] = dummy_df['Q']
-    input_df = pd.DataFrame(input_dict)
-    input_df.rename (columns = {'pr': 'P',
+    if not os.path.isabs(dtpath):
+        dtpath = os.path.join(cfg['auxiliary_data_dir'], dtpath)
+    if os.path.isfile(dtpath):
+        dummy_df = pd.read_csv(dtpath, sep='\s+')
+        if 'Q'  in dummy_df.columns:
+            input_dt['Q'] = dummy_df['Q']
+    input_dt.rename(columns = {'pr': 'P',
                                 'evspsblpot': 'ETpot', 
                                 'tas': 'T', 
                                 'rsds': 'GloRad'}, 
                     inplace = True)
-    input_df.to_csv(dtpath, index = True, header=True, sep=' ')
-
+    dtpath = os.path.join(
+                cfg['work_dir'],
+                os.path.splitext(os.path.basename(filename))[0] + '_polygon_table'
+                + '.dat')
+    input_dt.to_csv(dtpath, index = True, header=True, sep=' ')
 
 def main(cfg):
     """Select grid points within shapefiles."""
     if 'evalplot' not in cfg:
         cfg['evalplot'] = False
-    input_dict = {}
+    input_dt = pd.DataFrame()
     for filename, attributes in cfg['input_data'].items():
         logger.info("Processing variable %s from dataset %s",
                     attributes['standard_name'], attributes['dataset'])
@@ -203,11 +200,12 @@ def main(cfg):
         cube = iris.load_cube(filename)
         ncts = shapeselect(cfg, cube)
         wtime, wdata = getdata(filename, ncts)
-        input_dict.update({'Date': wtime, str(attributes['standard_name']): wdata})
+        input_dt['date'] = wtime
+        input_dt[str(attributes['standard_name'])] = wdata
     #name = os.path.splitext(os.path.basename(filename))[0] + '_polygon'
     if cfg['write_dat']:
         #xname = name + '_table'
-        writdat(cfg, filename, input_dict)
+        writdat(cfg, filename, input_dt)
         #caption = 'Selected gridpoints within shapefile.'
         #get_provenance_record(
            # cfg, xname, caption, 'xlsx', ancestor_files=[filename])
