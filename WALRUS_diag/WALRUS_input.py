@@ -19,7 +19,7 @@ cfg: dict
         Dictionary with diagnostic configuration.
 """
 
-"""Diagnostic to select data for WALRUS based on diag_shapeselect.py."""
+"""Diagnostic for WALRUS based on diag_shapeselect.py."""
 import logging
 import os
 from copy import deepcopy
@@ -38,7 +38,7 @@ from esmvaltool.diag_scripts.shared import (run_diagnostic, ProvenanceLogger,
 
 logger = logging.getLogger(os.path.basename(__file__))
 
-def get_provenance_record(cfg, basename, caption, extension, ancestor_files):
+def get_provenance_record(cfg, basename, caption, extension):
     """Create a provenance record describing the diagnostic data and plot."""
     record = {
         'caption': caption,
@@ -46,14 +46,12 @@ def get_provenance_record(cfg, basename, caption, extension, ancestor_files):
         'domains': ['global'],
         'authors': ['berg_pe'],
         'references': ['acknow_project'],
-        'ancestors': ancestor_files,
     }
     diagnostic_file = get_diagnostic_filename(basename, cfg, extension)
     with ProvenanceLogger(cfg) as provenance_logger:
         provenance_logger.log(diagnostic_file, record)
 
-# TODO
-# change lat o long to variables. 
+
 def shapeselect(cfg, cube):
     """Select data inside a shapefile and do averaging."""
     gjpath = cfg['geojfile']
@@ -103,6 +101,7 @@ def shapeselect(cfg, cube):
             nclat[ishp] = cube.coord('latitude').points[gyy]
     return ncts
 
+
 def mean_inside(gpx, gpy, points, multi, cube):
     """Find points inside shape."""
     for point in points:
@@ -117,6 +116,7 @@ def mean_inside(gpx, gpy, points, multi, cube):
             gpx.append(xxx)
             gpy.append(yyy)
     return gpx, gpy
+
 
 def representative(gpx, gpy, points, multi, cube):
     """Find representative point in shape."""
@@ -134,6 +134,7 @@ def representative(gpx, gpy, points, multi, cube):
     gpx.append(xxx)
     gpy.append(yyy)
     return gpx, gpy
+
 
 def best_match(iin, jin, pex, pey):
     """Identify the grid points in 2-d with minimum distance."""
@@ -153,8 +154,9 @@ def best_match(iin, jin, pex, pey):
     ind = np.unravel_index(np.argmin(distance, axis=None), distance.shape)
     return ind[0], ind[1]
 
+
 def getdata(filename, ncts):
-    """get the content of a netcdffile inside the lumped."""
+    """get the content of a netcdffile inside the lumped area."""
     ncfile = Dataset(filename, 'r')
     dtime = num2date(ncfile.variables['time'][:],
                     ncfile.variables['time'].units,
@@ -167,6 +169,7 @@ def getdata(filename, ncts):
         wdata.append(np.around(np.squeeze(ncts[:, row]), decimals=8))                               
     return wtime, wdata
 
+
 def writdat(cfg, filename, input_dt):
     """Write the content of a dataframe as .dat."""
     input_dt['Q'] = [None]*input_dt.shape[0]
@@ -174,8 +177,8 @@ def writdat(cfg, filename, input_dt):
     if not os.path.isabs(dtpath):
         dtpath = os.path.join(cfg['auxiliary_data_dir'], dtpath)
     if os.path.isfile(dtpath):
-        dummy_df = pd.read_csv(dtpath, sep='\s+')
-        if 'Q'  in dummy_df.columns:
+        dummy_df = pd.read_csv(dtpath, sep=' ')
+        if 'Q' in dummy_df.columns:
             input_dt['Q'] = dummy_df['Q']
     input_dt.rename(columns = {'pr': 'P',
                                 'evspsblpot': 'ETpot', 
@@ -187,6 +190,7 @@ def writdat(cfg, filename, input_dt):
                 os.path.splitext(os.path.basename(filename))[0] + '_polygon_table'
                 + '.dat')
     input_dt.to_csv(dtpath, index = True, header=True, sep=' ')
+
 
 def main(cfg):
     """Select grid points within shapefiles."""
@@ -202,16 +206,13 @@ def main(cfg):
         wtime, wdata = getdata(filename, ncts)
         input_dt['date'] = wtime
         input_dt[str(attributes['standard_name'])] = wdata
-    #name = os.path.splitext(os.path.basename(filename))[0] + '_polygon'
+    name = cfg['model']
     if cfg['write_dat']:
-        #xname = name + '_table'
         writdat(cfg, filename, input_dt)
-        #caption = 'Selected gridpoints within shapefile.'
-        #get_provenance_record(
-           # cfg, xname, caption, 'xlsx', ancestor_files=[filename])
-    
+        caption = 'Average value within lumped area.'
+        get_provenance_record(cfg, name, caption, 'dat')
 
-           
+
 if __name__ == '__main__':
     with run_diagnostic() as config:
         main(config)
