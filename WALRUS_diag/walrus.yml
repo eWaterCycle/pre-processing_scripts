@@ -23,5 +23,4 @@ diagnostics:
         datfile: 'PEQ_Hupsel.dat' # Q_obs is here
         geojfile: 'walrus-hupsel.geojson'
         weighting_method: 'mean_inside'
-
         write_dat: true
