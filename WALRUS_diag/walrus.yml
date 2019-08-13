@@ -42,4 +42,5 @@ diagnostics:
         datfile: 'PEQ_Hupsel.dat' 
         geojfile: 'walrus-hupsel.geojson'
         weighting_method: 'mean_inside'
+        convert_units: true
         write_dat: true

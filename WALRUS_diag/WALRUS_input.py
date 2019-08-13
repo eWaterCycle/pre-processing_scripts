@@ -142,6 +142,17 @@ def getdata(filename, ncts):
     return wtime, wdata
 
 
+def convunit(input_dt):
+    """unit conversion"""
+    if 'pr' in input_dt.columns:
+        input_dt['pr'] = input_dt['pr']*60*60
+    if 'evspsblpot' in input_dt.columns:
+        input_dt['evspsblpot'] = input_dt['evspsblpot']*60*60
+    if 'tas' in input_dt.columns:
+        input_dt['tas'] = input_dt['tas']-273.15
+    return input_dt
+
+
 def writdat(cfg, input_dt):
     """Write the content of a dataframe as .dat."""
     input_dt['Q'] = [None]*input_dt.shape[0]
@@ -175,6 +186,8 @@ def main(cfg):
         wtime, wdata = getdata(filename, ncts)
         input_dt['date'] = wtime
         input_dt[str(attributes['standard_name'])] = wdata
+    if cfg['convert_units']:
+        input_dt = convunit(input_dt)
     name = cfg['model']
     if cfg['write_dat']:
         writdat(cfg, input_dt)
