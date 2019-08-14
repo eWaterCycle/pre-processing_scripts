@@ -11,18 +11,11 @@ documentation:
     All the data should be averaged over the area.
     The output is saved as a .dat file in the working directory.
 
-  authors:
-    - Team-Beta
-
-  references:
-    - https://github.com/ClaudiaBrauer/WALRUS
-
-  projects:
-    - eWaterCycle
+  authors: ['dros_ni']
   
 datasets:
-#- {dataset: ERA5, project: OBS6,  mip: E1hr, tier: 3,    type: reanaly,    version: 1,        start_year: 2011,  end_year: 2012}
- - {dataset: EC-EARTH, project: CMIP5, mip: Amon, exp: historical, ensemble: r12i1p1, start_year: 2011, end_year: 2012}
+ - {dataset: ERA5, project: OBS6,  mip: E1hr, tier: 3,    type: reanaly,    version: 1,        start_year: 2011,  end_year: 2012}
+ #- {dataset: EC-EARTH, project: CMIP5, mip: Amon, exp: historical, ensemble: r12i1p1, start_year: 1990, end_year: 1999}
 
 diagnostics:
   diagnostic1:
@@ -35,7 +28,7 @@ diagnostics:
     scripts:
       script1:
         model: WALRUS
-        script: WLARUS/diag_WALRUS.py
+        script: /path/to/your/WALRUS/diag_WALRUS.py
         dataname: 'PEQ_Hupsel' 
         model_calib: false
         calibdata: 'PEQ_Hupsel.dat' 
