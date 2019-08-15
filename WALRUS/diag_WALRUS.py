@@ -16,7 +16,7 @@ from esmvaltool.diag_scripts.shared import (run_diagnostic, ProvenanceLogger,
 
 logger = logging.getLogger(os.path.basename(__file__))
 
-#TODO check the main, getdata, and merging the Q
+#TODO check merging the Q
 def get_provenance_record(cfg, basename, caption, extension):
     """Create a provenance record describing the diagnostic data and plot."""
     record = {
@@ -135,9 +135,9 @@ def getdata(filename, ncts):
                      ncfile.variables['time'].calendar)
     wtime = []
     for dtim in dtime:
-        wtime.append(str(dtim))
+        wtime.append(dtim.strftime("%Y%m%d%H"))
     for row in range(ncts.shape[1]):
-        wdata = np.around(np.squeeze(ncts[:, row]), decimals=8)
+        wdata = np.around(np.squeeze(ncts[:, row]), decimals=5)
     return wtime, wdata
 
 
@@ -151,6 +151,7 @@ def convunit(input_dt):
         input_dt['tas'] = input_dt['tas']-273.15
     return input_dt
 
+
 def renamecol(input_dt):
     """rename the variables"""
     if 'pr' in input_dt.columns:
@@ -162,6 +163,7 @@ def renamecol(input_dt):
     if 'rsds' in input_dt.columns:
         input_dt.rename(columns={'rsds': 'GloRad'}, inplace=True)
     return input_dt
+
 
 def writdat(cfg, input_dt):
     """Write the content of a dataframe as .dat."""
@@ -177,7 +179,7 @@ def writdat(cfg, input_dt):
                 input_dt['Q'] = dummy_df['Q']
     input_dt = renamecol(input_dt)
     dtpath = os.path.join(cfg['work_dir'], cfg['dataname'] + '.dat')
-    input_dt.to_csv(dtpath, index=True, header=True, sep=' ')
+    input_dt.to_csv(dtpath, index=False, header=True, sep=' ')
 
 
 def main(cfg):
@@ -193,7 +195,7 @@ def main(cfg):
         ncts = shapeselect(cfg, cube)
         wtime, wdata = getdata(filename, ncts)
         input_dt['date'] = wtime
-        input_dt[str(attributes['standard_name'])] = wdata
+        input_dt[str(attributes['short_name'])] = wdata
     if cfg['convert_units']:
         input_dt = convunit(input_dt)
     name = cfg['model']
