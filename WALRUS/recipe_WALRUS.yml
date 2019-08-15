@@ -14,8 +14,7 @@ documentation:
   authors: ['dros_ni']
   
 datasets:
- - {dataset: ERA5, project: OBS6,  mip: E1hr, tier: 3,    type: reanaly,    version: 1,        start_year: 2011,  end_year: 2012}
- #- {dataset: EC-EARTH, project: CMIP5, mip: Amon, exp: historical, ensemble: r12i1p1, start_year: 1990, end_year: 1999}
+ - {dataset: ERA5, project: OBS6,  mip: E1hr, tier: 3, type: reanaly, version: 1, start_year: 2011, end_year: 2012}
 
 diagnostics:
   diagnostic1:

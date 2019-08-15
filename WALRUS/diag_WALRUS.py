@@ -179,6 +179,7 @@ def writdat(cfg, input_dt):
                 input_dt['Q'] = dummy_df['Q']
     input_dt = renamecol(input_dt)
     dtpath = os.path.join(cfg['work_dir'], cfg['dataname'] + '.dat')
+    input_dt = input_dt.round(5)
     input_dt.to_csv(dtpath, index=False, header=True, sep=' ')
 
 
