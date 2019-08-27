@@ -16,6 +16,7 @@ ESMValTool Setup:
 
 2. in cmorize_obs_era_interim.nc in ESMValTool directory:
    Set: VLIST to only include the variables sftlf, pr and tas
+   Set: YEAR1 and YEAR2 to correct years
 
 7. create directory structure for input data
 	  [input_raw]
