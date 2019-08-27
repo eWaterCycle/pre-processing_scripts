@@ -8,24 +8,31 @@ documentation:
   authors: ['dros_ni']
   
 datasets:
- - {dataset: ERA-Interim, project: OBS, tier: 3, type: reanaly, version: 1, start_year: 1979, end_year: 1979}
+  - {dataset: ERA-Interim, project: OBS, tier: 3, type: reanaly, version: 1, start_year: 1979,  end_year: 1979}
 
 preprocessors:
-
   preprocessor1:
     extract_levels:
       levels: ERA-Interim
-      scheme: nearest
+      scheme: nearests
     regrid:
-      target_grid: ERA-Interim
+      target_grid: 0.75x0.75
       lon_offset: True
       lat_offset: True
       scheme: linear
-        
+
 diagnostics:
   diagnostic1:
-    description: Test diag.
+    description: Test diag
+    variables:
+      tas:
+        mip: day
+        preprocessor: preprocessor1
+      pr:
+        mip: day
+        preprocessor: preprocessor1
     scripts:
       script1:
-        model: PCR-GLOBWB
-        script: diag.py
+        script: examples/diagnostic.py
+        quickplot:
+          plot_type: pcolormesh

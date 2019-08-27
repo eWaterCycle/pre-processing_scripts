@@ -18,31 +18,31 @@ ESMValTool Setup:
    Set: VLIST to only include the variables sftlf, pr and tas
    Set: YEAR1 and YEAR2 to correct years
 
-7. create directory structure for input data
+3. create directory structure for input data
 	  [input_raw]
 	    |->[Tier3]
                 |->[ERA-Interim]
 
-6. pip install --user ecmwf-api-client
+4. pip install --user ecmwf-api-client
 	- download precipitation, temperature and landmask for PCR-GLOBWB
 	- see: https://confluence.ecmwf.int/display/WEBAPI/Install+ECMWF+API+Key on how to install Aconda API key
 
-7. Change filenames of input
+5. Change filenames of input
 	- Download the data on a single variable and single year basis, and save
           them as ERA-Interim_<var>_<mean>_YYYY.nc, where <var> is the ERA-Interim
 	  variable name and <mean> is either monthly or daily. Further download
 	  land-sea mask" from the "Invariant" data and save it in
           ERA-Interim_lsm.nc.
 
-8. Move files to input_raw directory
+6. Move files to input_raw directory
 
-9. cmorize_obs -c ESMValCore/esmvalcore/config-user.yml
+7. cmorize_obs -c ESMValCore/esmvalcore/config-user.yml
 
-7. create directory structure for cmorized input data
+8. create directory structure for cmorized input data
 	  [input_cmorized]
 	    |->[Tier3]
                 |->[ERA-Interim]
 
-8. copy cmorized input from [esmvaltool_output] to [input_cmorized]
+9. copy cmorized input from [esmvaltool_output] to [input_cmorized]
 
-9: test: esmvaltool -c ESMValCore/esmvalcore/config-user.yml recipe_pcrglobwb.yml
+10: test: esmvaltool -c ESMValCore/esmvalcore/config-user.yml recipe_pcrglobwb.yml
