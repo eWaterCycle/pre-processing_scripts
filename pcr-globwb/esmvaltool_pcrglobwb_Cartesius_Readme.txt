@@ -1,0 +1,48 @@
+Installation ESMValTool Cartesius cluster, located at: /lustre1/0/wtrcycle/esmvaltool/input_raw/Tier3/
+------------------------------------------------------------------------------------------------------
+Setup:
+1. git clone https://github.com/ESMValGroup/ESMValTool
+2. git clone https://github.com/ESMValGroup/ESMValCore
+2. cd ../ESMValTool
+3. module load Miniconda3
+4. conda env create --name esmvaltool --file environment.yml
+5. pip install --user .
+
+ESMValTool Setup:
+1. in config-user.yml in ESMValCore directory:
+   Set: remove_preproc_dir: false 
+   Set: OBS: /lustre1/0/wtrcycle/esmvaltool/input_cmorized
+   Set: RAWOBS: /lustre1/0/wtrcycle/esmvaltool/input_raw
+
+2. in cmorize_obs_era_interim.nc in ESMValTool directory:
+   Set: VLIST to only include the variables sftlf, pr and tas
+   Set: YEAR1 and YEAR2 to correct years
+
+3. create directory structure for input data
+	  [input_raw]
+	    |->[Tier3]
+                |->[ERA-Interim]
+
+4. pip install --user ecmwf-api-client
+	- download precipitation, temperature and landmask for PCR-GLOBWB
+	- see: https://confluence.ecmwf.int/display/WEBAPI/Install+ECMWF+API+Key on how to install Aconda API key
+
+5. Change filenames of input
+	- Download the data on a single variable and single year basis, and save
+          them as ERA-Interim_<var>_<mean>_YYYY.nc, where <var> is the ERA-Interim
+	  variable name and <mean> is either monthly or daily. Further download
+	  land-sea mask" from the "Invariant" data and save it in
+          ERA-Interim_lsm.nc.
+
+6. Move files to input_raw directory
+
+7. cmorize_obs -c ESMValCore/esmvalcore/config-user.yml
+
+8. create directory structure for cmorized input data
+	  [input_cmorized]
+	    |->[Tier3]
+                |->[ERA-Interim]
+
+9. copy cmorized input from [esmvaltool_output] to [input_cmorized]
+
+10: test: esmvaltool -c ESMValCore/esmvalcore/config-user.yml recipe_pcrglobwb.yml
