@@ -1,0 +1,105 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Nov 20 13:52:54 2018
+
+@author: verseve
+"""
+
+import xarray as xr
+import os
+import glob
+import numpy as np
+import pandas as pd
+import collections
+
+folder = r'p:\11200665-c3s-codec\CRUCIAL\1_ERA5\CDS'
+
+years = range(2004,2019)
+
+latmin = -40.25
+latmax = 40.0
+lonmin = -20.25
+lonmax = 55.0
+
+for year in years:
+
+
+    
+    fpath = os.path.join(folder, str(year))
+    files = sorted(glob.glob(os.path.join(fpath,"*.nc")))
+    
+    for n,f in enumerate(files):
+    
+        ds = xr.open_dataset(f)
+        print('processing file ' + f)
+        ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180)).sortby('longitude')
+        
+        ds_slice = ds.sel(latitude=slice(latmax, latmin),longitude=slice(lonmin, lonmax))
+        
+        np_2d = {}
+        np_2d['t2m'] = ds_slice.t2m.mean(dim=['time']).values
+        np_2d['msl'] = ds_slice.msl.mean(dim=['time']).values
+        np_2d['d2m']  = ds_slice.d2m.mean(dim=['time']).values
+        np_2d['tp'] = ds_slice.tp.sum(dim=['time']).values
+        np_2d['ssrd'] = (ds_slice.ssrd.sum(dim=['time']) /(24.*3600.)).values
+        np_2d['tisr'] = (ds_slice.tisr.sum(dim=['time']) /(24.*3600.)).values
+        
+        #Determines De Bruin (2016) reference evaporation
+        beta = 20
+        Cs = 110
+        pha = np_2d['msl'] / 100
+        cp = 1005
+        
+        esat = 6.112*np.exp((17.67 * np_2d['t2m'])/(np_2d['t2m']+243.5))
+        Slope = esat*(17.269/(np_2d['t2m']+243.5))*(1-(np_2d['t2m']/(np_2d['t2m'] + 243.5)))
+        lambda_ = (2.502*10**6)-(2250* np_2d['t2m'])
+        Gamma = (cp * pha)/(0.622 * lambda_)
+        Ep_Joule = ((Slope/(Slope+Gamma))*(((1-0.23)*np_2d['ssrd'])-(Cs*(np_2d['ssrd']/(np_2d['tisr']+0.00001)))))+beta
+        Ep_Joule = np.where(np_2d['tisr'] == 0, 0 , Ep_Joule)
+        Ep = np.where((Ep_Joule/lambda_)*1000*100 > 0,(Ep_Joule/lambda_)*1000*100,0)
+        
+        np_2d['PET'] = Ep
+        
+        
+        
+        time = os.path.basename(files[n]).split('.')[0].split('_')[1]
+        dvars = ds.data_vars
+
+        if n == 0:
+            np_ds = {}
+            t = pd.to_datetime([time])
+            for i in dvars:
+                np_ds[i] = np.reshape(np_2d[i],(1,np_2d[i].shape[0],np_2d[i].shape[1]))
+            np_ds['PET'] = np.reshape(np_2d['PET'],(1,np_2d['PET'].shape[0],np_2d['PET'].shape[1]))
+        else:
+            t = pd.DatetimeIndex.append(t,pd.to_datetime([time]))
+            for i in dvars:
+                np_ds[i] = np.append(np_ds[i] ,np.reshape(np_2d[i] ,(1,np_2d[i] .shape[0],np_2d[i] .shape[1])), axis = 0)
+            np_ds['PET'] = np.append(np_ds['PET'] ,np.reshape(np_2d['PET'] ,(1,np_2d['PET'] .shape[0],np_2d['PET'] .shape[1])), axis = 0)
+        
+    data = {k : (['time', 'latitude', 'longitude'],  np_ds[k],ds_slice[k].attrs) for (k,v) in np_ds.items() if k != 'PET'}
+    data['PET'] = (['time', 'latitude', 'longitude'], np_ds['PET'], collections.OrderedDict([('units', 'mm'), ('long_name', 'potential_evaporation')]))  
+    
+    t=t.shift(1,freq='D') 
+    
+    ds_img = xr.Dataset(data,
+                   coords={'longitude': ds_slice.longitude,
+                           'latitude': ds_slice.latitude,
+                           'time': t})
+    
+    ds_img.ssrd.attrs['units'] = 'W m**-2' 
+    ds_img.tisr.attrs['units'] = 'W m**-2'
+    
+    ds_img.longitude.attrs['standard_name'] = "longitude"
+    ds_img.longitude.attrs['units'] = "degrees _east"
+    ds_img.longitude.attrs['axis'] = "X"
+    ds_img.latitude.attrs['standard_name'] = "latitude"
+    ds_img.latitude.attrs['units'] = "degrees _north"
+    ds_img.latitude.attrs['axis'] = "Y"
+    
+    comp = {'zlib':True, 'complevel':4}
+    encoding = {var: comp for var in ds_img.data_vars} 
+    
+    ds_img.to_netcdf(r'p:\11200665-c3s-codec\CRUCIAL\WPS_Niger\era5_' + str(year) + '.nc', engine = 'netcdf4', encoding=encoding, unlimited_dims='time')
+    
+    
